@@ -3,7 +3,7 @@ from scipy.stats import logistic, norm
 import logging
 import pandas as pd
 
-import foehnix.foehnix_functions as func
+from . import foehnix_functions as func
 
 # logger
 log = logging.getLogger(__name__)

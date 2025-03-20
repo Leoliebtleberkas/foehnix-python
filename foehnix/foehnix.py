@@ -5,12 +5,12 @@ from scipy.stats import logistic, norm
 import time
 from copy import deepcopy
 
-import foehnix
-from foehnix.families import Family, initialize_family
-from foehnix.foehnix_filter import foehnix_filter
-from foehnix.iwls_logit import iwls_logit, iwls_summary
-import foehnix.foehnix_functions as func
-from foehnix import model_plots, analysis_plots
+
+from .families import Family, initialize_family
+from .foehnix_filter import foehnix_filter
+from .iwls_logit import iwls_logit, iwls_summary
+from . import foehnix_functions as func
+from . import model_plots, analysis_plots
 
 # logger
 log = logging.getLogger(__name__)
@@ -737,45 +737,37 @@ class Foehnix:
         mean_occ = 100 * (self.prob['prob'] >= .5).sum() / mean_n
 
         mean_prob = 100 * self.prob['prob'][self.prob['flag'].notna()].mean()
+        
 
         # Additional information about the data/model
         nr = len(self.prob)
-        print("\nNumber of observations (total) %8d (%d due to inflation)" %
-              (nr, self.inflated))
-        print("Removed due to missing values %9d (%3.1f percent)" %
-              (sum_na, sum_na / nr * 100))
-        print("Outside defined wind sector %11d (%3.1f percent)" %
-              (sum_0, sum_0 / nr * 100))
-        print("Used for classification %15d (%3.1f percent)" %
-              (sum_1, sum_1 / nr * 100))
-
-        print("\nClimatological foehn occurance %.2f percent (on n = %d)" %
-              (mean_occ, mean_n))
-        print("Mean foehn probability %.2f percent (on n = %d)" %
-              (mean_prob, mean_n))
-
-        print("\nLog-likelihood: %.1f, %d effective degrees of freedom" %
-              (self.optimizer['loglik'], self.optimizer['edf']))
-        print("Corresponding AIC = %.1f, BIC = %.1f\n" %
-              (self.optimizer['AIC'], self.optimizer['BIC']))
-        print("Number of EM iterations %d/%d (%s)" %
-              (self.optimizer['iter'], self.control.maxit_em,
-               ('converged' if self.optimizer['converged']
-                else 'not converged')))
+        output = "\nNumber of observations (total) %8d (%d due to inflation)\n" % (nr, self.inflated)
+        output += "Removed due to missing values %9d (%3.1f percent)\n" % (sum_na, sum_na / nr * 100)
+        output += "Outside defined wind sector %11d (%3.1f percent)\n" % (sum_0, sum_0 / nr * 100)
+        output += "Used for classification %15d (%3.1f percent)\n" % (sum_1, sum_1 / nr * 100)
+        
+        output += "\nClimatological foehn occurance %.2f percent (on n = %d)\n" % (mean_occ, mean_n)
+        output += "Mean foehn probability %.2f percent (on n = %d)\n" % (mean_prob, mean_n)
+        
+        output += "\nLog-likelihood: %.1f, %d effective degrees of freedom\n" % (self.optimizer['loglik'], self.optimizer['edf'])
+        output += "Corresponding AIC = %.1f, BIC = %.1f\n" % (self.optimizer['AIC'], self.optimizer['BIC'])
+        output += "Number of EM iterations %d/%d (%s)\n" % (
+            self.optimizer['iter'], self.control.maxit_em,
+            ('converged' if self.optimizer['converged'] else 'not converged')
+        )
+        
         if self.time < 60:
-            print("Time required for model estimation: %.1f seconds" %
-                  self.time)
+            output += "Time required for model estimation: %.1f seconds\n" % self.time
         else:
-            print("Time required for model estimation: %.1f minutes" %
-                  (self.time/60))
-
+            output += "Time required for model estimation: %.1f minutes\n" % (self.time / 60)
+        
         if detailed:
             # t value and corresponding p value based on a gaussian or t-test
             tmp = pd.DataFrame([], columns=['Estimate', 'Std. Error',
                                             't_value', 'Pr(>|t|)'],
                                index=['(Intercept).1', '(Intercept).2'],
                                dtype=float)
-
+        
             tmp.loc['(Intercept).1', 'Estimate'] = self.coef['mu1']
             tmp.loc['(Intercept).2', 'Estimate'] = self.coef['mu2']
             tmp.loc['(Intercept).1', 'Std. Error'] = self.mu_se['mu1_se']
@@ -783,14 +775,69 @@ class Foehnix:
             tmp.loc[:, 't_value'] = (tmp.loc[:, 'Estimate'] /
                                      tmp.loc[:, 'Std. Error'])
             tmp.loc[:, 'Pr(>|t|)'] = 2 * norm.pdf(0, loc=tmp.loc[:, 't_value'])
-
-            print('\n------------------------------------------------------\n')
-            print('Components: t test of coefficients\n')
-            print(tmp)
-
+        
+            output += '\n------------------------------------------------------\n'
+            output += 'Components: t test of coefficients\n'
+            output += tmp.to_string() + "\n"
+        
             # If concomitants are used, print summary
             if self.optimizer['ccmodel'] is not None:
                 iwls_summary(self.optimizer['ccmodel'])
+                
+        return output
+
+# =============================================================================
+#         nr = len(self.prob)
+#         print("\nNumber of observations (total) %8d (%d due to inflation)" %
+#               (nr, self.inflated))
+#         print("Removed due to missing values %9d (%3.1f percent)" %
+#               (sum_na, sum_na / nr * 100))
+#         print("Outside defined wind sector %11d (%3.1f percent)" %
+#               (sum_0, sum_0 / nr * 100))
+#         print("Used for classification %15d (%3.1f percent)" %
+#               (sum_1, sum_1 / nr * 100))
+# 
+#         print("\nClimatological foehn occurance %.2f percent (on n = %d)" %
+#               (mean_occ, mean_n))
+#         print("Mean foehn probability %.2f percent (on n = %d)" %
+#               (mean_prob, mean_n))
+# 
+#         print("\nLog-likelihood: %.1f, %d effective degrees of freedom" %
+#               (self.optimizer['loglik'], self.optimizer['edf']))
+#         print("Corresponding AIC = %.1f, BIC = %.1f\n" %
+#               (self.optimizer['AIC'], self.optimizer['BIC']))
+#         print("Number of EM iterations %d/%d (%s)" %
+#               (self.optimizer['iter'], self.control.maxit_em,
+#                ('converged' if self.optimizer['converged']
+#                 else 'not converged')))
+#         if self.time < 60:
+#             print("Time required for model estimation: %.1f seconds" %
+#                   self.time)
+#         else:
+#             print("Time required for model estimation: %.1f minutes" %
+#                   (self.time/60))
+# 
+#         if detailed:
+#             # t value and corresponding p value based on a gaussian or t-test
+#             tmp = pd.DataFrame([], columns=['Estimate', 'Std. Error',
+#                                             't_value', 'Pr(>|t|)'],
+#                                index=['(Intercept).1', '(Intercept).2'],
+#                                dtype=float)
+# 
+#             tmp.loc['(Intercept).1', 'Estimate'] = self.coef['mu1']
+#             tmp.loc['(Intercept).2', 'Estimate'] = self.coef['mu2']
+#             tmp.loc['(Intercept).1', 'Std. Error'] = self.mu_se['mu1_se']
+#             tmp.loc['(Intercept).2', 'Std. Error'] = self.mu_se['mu2_se']
+#             tmp.loc[:, 't_value'] = (tmp.loc[:, 'Estimate'] /
+#                                      tmp.loc[:, 'Std. Error'])
+#             tmp.loc[:, 'Pr(>|t|)'] = 2 * norm.pdf(0, loc=tmp.loc[:, 't_value'])
+# 
+#             print('\n------------------------------------------------------\n')
+#             print('Components: t test of coefficients\n')
+#             print(tmp)
+# =============================================================================
+
+
 
     def plot(self, which, **kwargs):
         """

@@ -14,7 +14,8 @@ MAJOR = 0
 MINOR = 1
 MICRO = 2
 ISRELEASED = False
-VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
+#VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
+VERSION = "0.1.2"
 QUALIFIER = ''
 
 DISTNAME = 'foehnix'
@@ -85,6 +86,7 @@ if not ISRELEASED:
 else:
     FULLVERSION += QUALIFIER
 
+FULLVERSION = "0.1.2"
 
 def write_version_py(filename=None):
     cnt = """\

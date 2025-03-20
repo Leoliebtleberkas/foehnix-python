@@ -6,6 +6,7 @@ from .iwls_logit import iwls_logit
 from .demodata import get_demodata
 
 # __version__
-from foehnix import version
+from . import version
+#from foehnix import version
 __version__ = version.short_version
 del version

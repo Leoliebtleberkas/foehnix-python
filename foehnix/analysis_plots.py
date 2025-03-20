@@ -6,7 +6,6 @@ import pandas as pd
 import logging
 import os
 
-import foehnix
 
 
 # logger
